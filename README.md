@@ -1,42 +1,52 @@
 # UK-Education
 
-# 🧾 Student Info Extractor from PDF
+## 🧠 Project Overview
 
-This Python script automates the extraction of structured student information from scanned or exported PDF documents. It leverages `pdfplumber` to read PDF text, cleans it, and uses **Claude AI (Anthropic)** to convert unstructured text into a structured JSON format.
+This project automates the extraction and processing of student information from PDF files and simulates an online college application submission using browser automation.
 
----
-
-## 📌 Use Case
-
-This tool is designed to simplify the process of extracting key student application details such as:
-- Full Name
-- Date of Birth
-- Nationality
-- Address
-- Contact Info (Mobile, Email)
-- Academic Records (GPA, IELTS Score)
-- School Information
-
-It is ideal for **automated application pipelines**, data analysis, or generating reports from PDFs.
+It combines:
+- **Text Extraction** with `pdfplumber`
+- **Text Cleaning & Filtering** (removal of Arabic, symbols, and noise)
+- **AI-Powered Structuring** using Anthropic's Claude API
+- **Browser Automation** via Playwright (Chromium headless or visible mode)
 
 ---
 
-## 🧠 How It Works
+## 🎯 Objectives
 
-1. ✅ **Reads the PDF** using `pdfplumber`
-2. 🧹 **Cleans and filters the text**, removing Arabic and non-ASCII characters
-3. 🤖 **Sends the text to Claude** using Anthropic API
-4. 🧾 **Prints each field individually** from the returned JSON
+- ✅ Automatically extract key student information from exported/scanned documents (PDFs)
+- ✅ Convert unstructured student data into structured JSON format
+- ✅ Automatically fill a web application form using Playwright
+- 🚫 Avoid manual data entry, especially in repetitive admission tasks
 
 ---
+
+## ⚙️ Pipeline Architecture
+
+```mermaid
+flowchart TD
+    A[PDF Upload] --> B[Extract Text with pdfplumber]
+    B --> C[Clean & Filter Text]
+    C --> D[Send to Claude API]
+    D --> E[Get JSON Response]
+    E --> F[Use Playwright to Auto-Fill Web Form]
+
 
 ## 🔧 Requirements
 
 - Python 3.8+
 - `anthropic`
 - `pdfplumber`
+- 're'
+- 'OpenAi'
+- 'Playwright'
 
 Install with:
+pip install anthropic
+pip install pdfplumber
+pip install openai
+pip install playwright
+playwright install
 
 ```bash
 pip install -r requirements.txt
