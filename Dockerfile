@@ -1,19 +1,17 @@
 FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 
-# Set working directory
 WORKDIR /app
 
-# Copy requirements and install dependencies
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy application
 COPY . .
-COPY start.sh .
-RUN chmod +x start.sh
+
 # Expose port
 EXPOSE 8000
 
-# Start command
-CMD ["./start.sh"]
+# Run Python directly (this will use the port handling in your main.py)
+CMD ["python", "main.py"]
