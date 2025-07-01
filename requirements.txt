@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+pdfplumber
+anthropic
+playwright
+python-multipart
