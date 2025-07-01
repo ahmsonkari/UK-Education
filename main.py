@@ -429,9 +429,16 @@ async def test_browser():
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(
-                headless=False,
-                args=['--no-sandbox', '--disable-dev-shm-usage']
-            )
+    headless=True,  # Changed to True for production
+    args=[
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-dev-tools',
+        '--no-zygote',
+        '--single-process',  # Important for Railway
+    ]
+)
             page = await browser.new_page()
             await page.goto("https://www.google.com")
             await page.wait_for_timeout(3000)
