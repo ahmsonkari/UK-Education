@@ -4,3 +4,4 @@ pdfplumber
 anthropic
 playwright
 python-multipart
+nixpacks.toml
