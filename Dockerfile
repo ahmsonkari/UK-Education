@@ -1,17 +1,27 @@
-FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+FROM python:3.11-slim
 
+# Install system dependencies for Playwright
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
 WORKDIR /app
 
-# Copy requirements and install
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
+# Install Playwright browsers
+RUN playwright install chromium
+RUN playwright install-deps chromium
+
+# Copy application code
 COPY . .
 
-# Expose port
-EXPOSE 8000
+# Expose port (Railway will set the PORT env var)
+EXPOSE $PORT
 
-# Run Python directly (this will use the port handling in your main.py)
-CMD ["python", "main.py"]
+# Start the application
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
