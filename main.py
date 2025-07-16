@@ -105,9 +105,9 @@ async def fill_form_async(data: dict, agent_name: str):
     """Fill form using Playwright with proper error handling"""
     try:
         async with async_playwright() as p:
-            # Launch browser with proper configuration for production
+            # Launch browser with proper configuration
             browser = await p.chromium.launch(
-                headless=True,  # Changed to True for Railway deployment
+                headless=False,
                 args=[
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
@@ -115,91 +115,108 @@ async def fill_form_async(data: dict, agent_name: str):
                     '--disable-dev-tools',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor'
                 ]
             )
-            
+
             context = await browser.new_context(
                 viewport={'width': 1280, 'height': 720},
                 user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             )
-            
+
             page = await context.new_page()
-            
+
             # Add console logging for debugging
             page.on("console", lambda msg: logger.info(f"Browser console: {msg.text}"))
             page.on("pageerror", lambda error: logger.error(f"Page error: {error}"))
-            
+
             try:
                 logger.info("Navigating to form...")
                 await page.goto(
                     "https://kicpathways.formstack.com/forms/uk_application_combined",
                     wait_until="networkidle",
-                    timeout=30000
+                    timeout=30000000
                 )
-                
+
                 logger.info("Filling first page...")
                 # First page
                 await page.wait_for_selector("#field167775915_3", timeout=10000)
                 await page.click("#field167775915_3")
-                
+
                 await page.wait_for_selector("#field167775918", timeout=10000)
                 await page.fill("#field167775918", "UK Education Services")
-                
+
                 await page.wait_for_selector("#field167775921-first", timeout=10000)
                 await page.fill("#field167775921-first", agent_name)
-                
+
                 await page.wait_for_selector("#field167775922", timeout=10000)
                 await page.fill("#field167775922", f"{agent_name}@ukeducationservices.com")
-                
+
                 await page.wait_for_selector("#field167775936", timeout=10000)
                 await page.fill("#field167775936", data.get("full_name", ""))
-                
+
                 await page.wait_for_selector("#field167775945", timeout=10000)
                 await page.fill("#field167775945", data.get("emails", ""))
-                
+
+                # await page.wait_for_selector("#field167775938", timeout=10000)
+                # await page.select_option("#field167775938", data.get("nationality", ""))
+
                 # Click next button
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
                 await page.click("#fsNextButton5813211")
-                
+
                 logger.info("Filling second page...")
                 # Second page
                 await page.wait_for_selector("#field167776176", timeout=10000)
                 await page.fill("#field167776176", data.get("school_name", ""))
-                
+
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
                 await page.click("#fsNextButton5813211")
-                
+
                 logger.info("Filling third page...")
                 # Third page
                 await page.wait_for_selector("#field167776220", timeout=10000)
                 await page.fill("#field167776220", data.get("mobile_numbers", ""))
-                
+
+                # Copy Link
+                await page.wait_for_selector("#fsForm5813211 > button", timeout=10000)
+                await page.click("#fsForm5813211 > button")
+                # '.StyledDialogActions-sc-1m3qehg-0.dWImUC'
+                await page.wait_for_selector('.StyledDialogActions-sc-1m3qehg-0.dWImUC', timeout=10000)
+                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh');
+
+                selector = 'body > div > form > div.fs-external-module__content.fs--grid-4-8 > div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > p:nth-child(3) > a'
+                await page.wait_for_selector(selector, timeout=10000)
+                element_text = await page.locator(selector).text_content()
+
+                # Print the element text
+                print(f"Element text: {element_text}")
+                logger.info(f"Element text: {element_text}")
+
                 await page.wait_for_timeout(2000)
-                
+
                 logger.info("Form filling completed successfully")
-                return {"status": "success", "message": "Form filled successfully"}
-                
+                return {"status": "success", "message": "Form filled successfully", "element_text": element_text}
+
             except Exception as e:
                 logger.error(f"Form filling error: {e}")
-                # Take screenshot for debugging (still works in headless)
+                # Take screenshot for debugging
                 try:
                     await page.screenshot(path=f"error_screenshot_{agent_name}.png")
                     logger.info(f"Screenshot saved: error_screenshot_{agent_name}.png")
                 except:
                     pass
                 raise e
-                
+
             finally:
                 await browser.close()
-                
+
     except Exception as e:
         logger.error(f"Playwright error: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Browser automation failed: {str(e)}. Make sure Playwright browsers are installed."
         )
+
 
 # === API Endpoints ===
 @app.get("/", response_class=HTMLResponse)
