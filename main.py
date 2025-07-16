@@ -105,13 +105,18 @@ async def fill_form_async(data: dict, agent_name: str):
     """Fill form using Playwright with proper error handling"""
     try:
         async with async_playwright() as p:
-            # Launch browser with proper configuration
+            # Launch browser with proper configuration for production
             browser = await p.chromium.launch(
-                headless=False,
+                headless=True,  # Changed to True for Railway deployment
                 args=[
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
                     '--disable-gpu',
+                    '--disable-dev-tools',
+                    '--no-zygote',
+                    '--single-process',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor'
                 ]
             )
             
@@ -178,7 +183,7 @@ async def fill_form_async(data: dict, agent_name: str):
                 
             except Exception as e:
                 logger.error(f"Form filling error: {e}")
-                # Take screenshot for debugging
+                # Take screenshot for debugging (still works in headless)
                 try:
                     await page.screenshot(path=f"error_screenshot_{agent_name}.png")
                     logger.info(f"Screenshot saved: error_screenshot_{agent_name}.png")
@@ -195,7 +200,6 @@ async def fill_form_async(data: dict, agent_name: str):
             status_code=500,
             detail=f"Browser automation failed: {str(e)}. Make sure Playwright browsers are installed."
         )
-
 
 # === API Endpoints ===
 @app.get("/", response_class=HTMLResponse)
