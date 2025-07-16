@@ -105,9 +105,9 @@ async def fill_form_async(data: dict, agent_name: str):
     """Fill form using Playwright with proper error handling"""
     try:
         async with async_playwright() as p:
-            # Launch browser with proper configuration
+            # Launch browser with proper configuration for headless deployment
             browser = await p.chromium.launch(
-                headless=False,
+                headless=True,
                 args=[
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
@@ -115,6 +115,8 @@ async def fill_form_async(data: dict, agent_name: str):
                     '--disable-dev-tools',
                     '--no-zygote',
                     '--single-process',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor'
                 ]
             )
 
@@ -134,11 +136,10 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.goto(
                     "https://kicpathways.formstack.com/forms/uk_application_combined",
                     wait_until="networkidle",
-                    timeout=30000000
+                    timeout=30000
                 )
 
                 logger.info("Filling first page...")
-                # First page
                 await page.wait_for_selector("#field167775915_3", timeout=10000)
                 await page.click("#field167775915_3")
 
@@ -157,15 +158,11 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.wait_for_selector("#field167775945", timeout=10000)
                 await page.fill("#field167775945", data.get("emails", ""))
 
-                # await page.wait_for_selector("#field167775938", timeout=10000)
-                # await page.select_option("#field167775938", data.get("nationality", ""))
-
                 # Click next button
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
                 await page.click("#fsNextButton5813211")
 
                 logger.info("Filling second page...")
-                # Second page
                 await page.wait_for_selector("#field167776176", timeout=10000)
                 await page.fill("#field167776176", data.get("school_name", ""))
 
@@ -173,25 +170,25 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.click("#fsNextButton5813211")
 
                 logger.info("Filling third page...")
-                # Third page
                 await page.wait_for_selector("#field167776220", timeout=10000)
                 await page.fill("#field167776220", data.get("mobile_numbers", ""))
 
-                # Copy Link
+                # Copy Link step
                 await page.wait_for_selector("#fsForm5813211 > button", timeout=10000)
                 await page.click("#fsForm5813211 > button")
-                # '.StyledDialogActions-sc-1m3qehg-0.dWImUC'
-                await page.wait_for_selector('.StyledDialogActions-sc-1m3qehg-0.dWImUC', timeout=10000)
-                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh');
 
-                selector = 'body > div > form > div.fs-external-module__content.fs--grid-4-8 > div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > p:nth-child(3) > a'
+                await page.wait_for_selector('.StyledDialogActions-sc-1m3qehg-0.dWImUC', timeout=10000)
+                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh')
+
+                selector = (
+                    'body > div > form > div.fs-external-module__content.fs--grid-4-8 > '
+                    'div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > '
+                    'p:nth-child(3) > a'
+                )
                 await page.wait_for_selector(selector, timeout=10000)
                 element_text = await page.locator(selector).text_content()
 
-                # Print the element text
-                print(f"Element text: {element_text}")
-                logger.info(f"Element text: {element_text}")
-
+                logger.info(f"Link copied: {element_text}")
                 await page.wait_for_timeout(2000)
 
                 logger.info("Form filling completed successfully")
@@ -199,12 +196,11 @@ async def fill_form_async(data: dict, agent_name: str):
 
             except Exception as e:
                 logger.error(f"Form filling error: {e}")
-                # Take screenshot for debugging
                 try:
                     await page.screenshot(path=f"error_screenshot_{agent_name}.png")
                     logger.info(f"Screenshot saved: error_screenshot_{agent_name}.png")
                 except:
-                    pass
+                    logger.warning("Failed to capture screenshot.")
                 raise e
 
             finally:
