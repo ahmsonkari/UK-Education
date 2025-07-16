@@ -233,6 +233,7 @@ async def home():
                 .error { color: red; }
                 .success { color: green; }
                 .loading { color: blue; }
+                .highlight { background-color: #ffffcc; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #4CAF50; }
                 pre { background-color: #f0f0f0; padding: 10px; border-radius: 3px; overflow-x: auto; }
             </style>
         </head>
@@ -245,16 +246,16 @@ async def home():
                 <button type="submit">🔍 Extract Student Info</button>
             </form>
             <div id="result" class="result" style="display: none;"></div>
-            
+
             <script>
                 let extractedData = null;
                 let agentName = null;
-                
+
                 document.getElementById('extractForm').addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const resultDiv = document.getElementById('result');
                     const submitBtn = e.target.querySelector('button[type="submit"]');
-                    
+
                     resultDiv.style.display = 'block';
                     resultDiv.innerHTML = '<p class="loading">Processing PDF...</p>';
                     submitBtn.disabled = true;
@@ -264,7 +265,7 @@ async def home():
                         formData.append('api_key', e.target.api_key.value);
                         formData.append('agent_name', e.target.agent_name.value);
                         formData.append('pdf_file', e.target.pdf_file.files[0]);
-                        
+
                         agentName = e.target.agent_name.value;
 
                         const response = await fetch('/extract', {
@@ -302,18 +303,18 @@ async def home():
                 async function fillForm() {
                     const fillResultDiv = document.getElementById('fillFormResult') || document.createElement('div');
                     fillResultDiv.id = 'fillFormResult';
-                    
+
                     if (!document.getElementById('fillFormResult')) {
                         document.getElementById('result').appendChild(fillResultDiv);
                     }
-                    
+
                     fillResultDiv.innerHTML = '<p class="loading">🚀 Launching browser and filling form...</p>';
 
                     try {
                         if (!extractedData) {
                             throw new Error('No student data found. Please extract information first.');
                         }
-                        
+
                         if (!agentName) {
                             throw new Error('Agent name not found. Please try extracting data again.');
                         }
@@ -332,7 +333,20 @@ async def home():
                         const result = await response.json();
 
                         if (response.ok) {
-                            fillResultDiv.innerHTML = '<p class="success">✅ Browser launched successfully! Please complete any remaining steps manually.</p>';
+                            let successHtml = '<p class="success">✅ Browser launched successfully! Please complete any remaining steps manually.</p>';
+
+                            // Display element text if available
+                            if (result.element_text) {
+                                successHtml += `
+                                    <div class="highlight">
+                                        <h4>🔗 Generated Link:</h4>
+                                        <p><strong>Element Text:</strong> <code>${result.element_text}</code></p>
+                                        <a href="${result.element_text}" target="_blank" style="color: #4CAF50; text-decoration: underline;">🔗 Open Link</a>
+                                    </div>
+                                `;
+                            }
+
+                            fillResultDiv.innerHTML = successHtml;
                         } else {
                             throw new Error(result.detail || 'Failed to launch browser');
                         }
@@ -345,7 +359,6 @@ async def home():
         </body>
     </html>
     """
-
 
 @app.post("/extract")
 async def extract_info(
