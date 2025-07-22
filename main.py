@@ -504,7 +504,7 @@ async def fill_form(request: FillFormRequest):
     """Launch browser and fill form with student data"""
     try:
         # Validate required fields
-        required_fields = ['full_name', 'emails', 'school_name', 'mobile_numbers']
+        required_fields = ['first_name', 'emails', 'school_name', 'mobile_numbers']
         missing_fields = []
         
         for field in required_fields:
