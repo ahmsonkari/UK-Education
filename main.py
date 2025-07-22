@@ -175,10 +175,7 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.fill("#field167775937", data.get("last_name", ""))
 
                 await page.select_option("#field167775938", data.get("nationality"))
-
-                await page.wait_for_selector("#field167775942", timeout=10000)
-                await page.select_option("#field167775942", data.get("place_of_birth"))
-
+                
                 await page.wait_for_selector("#field167775945", timeout=10000)
                 await page.fill("#field167775945", data.get("emails", ""))
 
