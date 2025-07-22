@@ -58,8 +58,18 @@ async def call_claude_api(cleaned_text: str, api_key: str):
     """Call Claude API to extract student information"""
     client = anthropic.Anthropic(api_key=api_key)
     prompt = f"""
-You are a data extraction assistant. Extract the following student details from the text and return a clean JSON object:
-Fields: Full Name, Date of Birth, Nationality, Address, Mobile Numbers, Emails, Final GPA, IELTS Score, School Name, Graduation Date.
+You are a data extraction assistant. 
+Note1:Dates attended should be like EX:09/2023-06/2024
+Note2: Date of Birth should be like EX:29/06/2004
+Note3:IELTS date should be like EX: jun 2024
+Note4: School region choose the country Example Saudi Arabia
+Note5: gender is either 'M' or 'F'
+Note6: don't save them in parantases like () [] "" '' save them as they are
+
+ Extract the following student details from the text and return a clean JSON object:
+Fields: First name,Middle name,Last name,Gender,Date of Birth, Nationality,Place of Birth, Address,Address Country,Address City ,
+Mobile Numbers, Emails
+,  IELTS Score,IELTS Date, Name of Qualification ,School Name, School region ,Dates attended
 
 Text:
 \"\"\"{cleaned_text}\"\"\"
@@ -105,9 +115,9 @@ async def fill_form_async(data: dict, agent_name: str):
     """Fill form using Playwright with proper error handling"""
     try:
         async with async_playwright() as p:
-            # Launch browser with proper configuration for headless deployment
+            # Launch browser with proper configuration
             browser = await p.chromium.launch(
-                headless=True,
+                headless=False,
                 args=[
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
@@ -115,8 +125,6 @@ async def fill_form_async(data: dict, agent_name: str):
                     '--disable-dev-tools',
                     '--no-zygote',
                     '--single-process',
-                    '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor'
                 ]
             )
 
@@ -136,10 +144,11 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.goto(
                     "https://kicpathways.formstack.com/forms/uk_application_combined",
                     wait_until="networkidle",
-                    timeout=30000
+                    timeout=30000000
                 )
 
                 logger.info("Filling first page...")
+                # First page
                 await page.wait_for_selector("#field167775915_3", timeout=10000)
                 await page.click("#field167775915_3")
 
@@ -149,46 +158,121 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.wait_for_selector("#field167775921-first", timeout=10000)
                 await page.fill("#field167775921-first", agent_name)
 
+                await page.wait_for_selector("#field167775921-last", timeout=10000)
+                await page.fill("#field167775921-last", ".")
+
                 await page.wait_for_selector("#field167775922", timeout=10000)
                 await page.fill("#field167775922", f"{agent_name}@ukeducationservices.com")
 
+                await page.select_option("#field167775920", index=202)
+
+
+
+
                 await page.wait_for_selector("#field167775936", timeout=10000)
-                await page.fill("#field167775936", data.get("full_name", ""))
+                await page.fill("#field167775936", data.get("first_name", "") + " " + data.get("middle_name", ""))
+
+
+                await page.wait_for_selector("#field167775937", timeout=10000)
+                await page.fill("#field167775937", data.get("last_name", ""))
+
+                await page.select_option("#field167775938", data.get("nationality"))
+
+                await page.wait_for_selector(" #field167775942", timeout=10000)
+                await page.select_option("#field167775942", data.get("place_of_birth"))
+
 
                 await page.wait_for_selector("#field167775945", timeout=10000)
                 await page.fill("#field167775945", data.get("emails", ""))
+
+                await page.wait_for_selector("#field167775941_2", timeout=10000)
+                await page.click("#field167775941_2")
+
+                await page.wait_for_selector("#field167775943_2", timeout=10000)
+                await page.click("#field167775943_2")
+                # field167775943_2
 
                 # Click next button
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
                 await page.click("#fsNextButton5813211")
 
                 logger.info("Filling second page...")
+                # Second page
+
+                await page.wait_for_selector("#field167776174", timeout=10000)
+                await page.fill("#field167776174", data.get("name_of_qualification", ""))
+
                 await page.wait_for_selector("#field167776176", timeout=10000)
                 await page.fill("#field167776176", data.get("school_name", ""))
+
+                await page.wait_for_selector("#field167776175", timeout=10000)
+                await page.fill("#field167776175", data.get("dates_attended", ""))
+
+                await page.select_option("#field167776177", data.get("school_region"))
+
+                if data.get("ielts_score") is None:
+                    await page.click("#field167776190_2")
+                else:
+                    await page.click("#field167776190_1")
+
+                    await page.wait_for_selector("#field167776191_1", timeout=10000)
+                    await page.click("#field167776191_1")
+
 
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
                 await page.click("#fsNextButton5813211")
 
                 logger.info("Filling third page...")
+                # Third page
                 await page.wait_for_selector("#field167776220", timeout=10000)
                 await page.fill("#field167776220", data.get("mobile_numbers", ""))
 
-                # Copy Link step
+                await page.wait_for_selector("#field167776218-\\*", timeout=10000)
+                await page.fill("#field167776218-\\*", data.get("date_of_birth"))
+
+                await page.click("#field167776213_2")
+
+                await page.click("#field167776215_2")
+
+
+                await page.select_option("#field167776233", data.get("address_country"))
+
+                await page.wait_for_selector("#field167776234", timeout=10000)
+                await page.fill("#field167776234", data.get("address", ""))
+
+                await page.wait_for_selector("#field167776236", timeout=10000)
+                await page.fill("#field167776236", data.get("address_city", ""))
+
+                await page.click("#field167776223_3")
+                await page.click("#field167776229_2")
+                await page.click("#field167776240_1")
+
+
+
+                logger.info("Filling fourth page...")
+                # fourth page
+                await page.click("#fsNextButton5813211")
+                await page.click("#field167776264_2")
+                await page.click("#field167776268_2")
+
+
+
+
+                # Copy Link
                 await page.wait_for_selector("#fsForm5813211 > button", timeout=10000)
                 await page.click("#fsForm5813211 > button")
-
+                # '.StyledDialogActions-sc-1m3qehg-0.dWImUC'
                 await page.wait_for_selector('.StyledDialogActions-sc-1m3qehg-0.dWImUC', timeout=10000)
-                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh')
+                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh');
 
-                selector = (
-                    'body > div > form > div.fs-external-module__content.fs--grid-4-8 > '
-                    'div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > '
-                    'p:nth-child(3) > a'
-                )
+                selector = 'body > div > form > div.fs-external-module__content.fs--grid-4-8 > div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > p:nth-child(3) > a'
                 await page.wait_for_selector(selector, timeout=10000)
                 element_text = await page.locator(selector).text_content()
 
-                logger.info(f"Link copied: {element_text}")
+                # Print the element text
+                print(f"Element text: {element_text}")
+                logger.info(f"Element text: {element_text}")
+
                 await page.wait_for_timeout(2000)
 
                 logger.info("Form filling completed successfully")
@@ -196,11 +280,12 @@ async def fill_form_async(data: dict, agent_name: str):
 
             except Exception as e:
                 logger.error(f"Form filling error: {e}")
+                # Take screenshot for debugging
                 try:
                     await page.screenshot(path=f"error_screenshot_{agent_name}.png")
                     logger.info(f"Screenshot saved: error_screenshot_{agent_name}.png")
                 except:
-                    logger.warning("Failed to capture screenshot.")
+                    pass
                 raise e
 
             finally:
