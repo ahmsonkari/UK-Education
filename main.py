@@ -115,9 +115,9 @@ async def fill_form_async(data: dict, agent_name: str):
     """Fill form using Playwright with proper error handling"""
     try:
         async with async_playwright() as p:
-            # Launch browser with proper configuration
+            # Launch browser with proper configuration for server environment
             browser = await p.chromium.launch(
-                headless=False,
+                headless=True,  # CHANGED: Set to True for server environments
                 args=[
                     '--no-sandbox',
                     '--disable-dev-shm-usage',
@@ -125,6 +125,8 @@ async def fill_form_async(data: dict, agent_name: str):
                     '--disable-dev-tools',
                     '--no-zygote',
                     '--single-process',
+                    '--disable-web-security',  # Added for form automation
+                    '--disable-features=VizDisplayCompositor',  # Added for stability
                 ]
             )
 
@@ -144,7 +146,7 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.goto(
                     "https://kicpathways.formstack.com/forms/uk_application_combined",
                     wait_until="networkidle",
-                    timeout=30000000
+                    timeout=60000  # Increased timeout
                 )
 
                 logger.info("Filling first page...")
@@ -166,21 +168,16 @@ async def fill_form_async(data: dict, agent_name: str):
 
                 await page.select_option("#field167775920", index=202)
 
-
-
-
                 await page.wait_for_selector("#field167775936", timeout=10000)
                 await page.fill("#field167775936", data.get("first_name", "") + " " + data.get("middle_name", ""))
-
 
                 await page.wait_for_selector("#field167775937", timeout=10000)
                 await page.fill("#field167775937", data.get("last_name", ""))
 
                 await page.select_option("#field167775938", data.get("nationality"))
 
-                await page.wait_for_selector(" #field167775942", timeout=10000)
+                await page.wait_for_selector("#field167775942", timeout=10000)
                 await page.select_option("#field167775942", data.get("place_of_birth"))
-
 
                 await page.wait_for_selector("#field167775945", timeout=10000)
                 await page.fill("#field167775945", data.get("emails", ""))
@@ -190,7 +187,6 @@ async def fill_form_async(data: dict, agent_name: str):
 
                 await page.wait_for_selector("#field167775943_2", timeout=10000)
                 await page.click("#field167775943_2")
-                # field167775943_2
 
                 # Click next button
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
@@ -198,7 +194,6 @@ async def fill_form_async(data: dict, agent_name: str):
 
                 logger.info("Filling second page...")
                 # Second page
-
                 await page.wait_for_selector("#field167776174", timeout=10000)
                 await page.fill("#field167776174", data.get("name_of_qualification", ""))
 
@@ -214,10 +209,8 @@ async def fill_form_async(data: dict, agent_name: str):
                     await page.click("#field167776190_2")
                 else:
                     await page.click("#field167776190_1")
-
                     await page.wait_for_selector("#field167776191_1", timeout=10000)
                     await page.click("#field167776191_1")
-
 
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
                 await page.click("#fsNextButton5813211")
@@ -231,9 +224,7 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.fill("#field167776218-\\*", data.get("date_of_birth"))
 
                 await page.click("#field167776213_2")
-
                 await page.click("#field167776215_2")
-
 
                 await page.select_option("#field167776233", data.get("address_country"))
 
@@ -247,29 +238,23 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.click("#field167776229_2")
                 await page.click("#field167776240_1")
 
-
-
                 logger.info("Filling fourth page...")
-                # fourth page
+                # Fourth page
                 await page.click("#fsNextButton5813211")
                 await page.click("#field167776264_2")
                 await page.click("#field167776268_2")
 
-
-
-
                 # Copy Link
                 await page.wait_for_selector("#fsForm5813211 > button", timeout=10000)
                 await page.click("#fsForm5813211 > button")
-                # '.StyledDialogActions-sc-1m3qehg-0.dWImUC'
+
                 await page.wait_for_selector('.StyledDialogActions-sc-1m3qehg-0.dWImUC', timeout=10000)
-                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh');
+                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh')
 
                 selector = 'body > div > form > div.fs-external-module__content.fs--grid-4-8 > div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > p:nth-child(3) > a'
                 await page.wait_for_selector(selector, timeout=10000)
                 element_text = await page.locator(selector).text_content()
 
-                # Print the element text
                 print(f"Element text: {element_text}")
                 logger.info(f"Element text: {element_text}")
 
@@ -280,12 +265,13 @@ async def fill_form_async(data: dict, agent_name: str):
 
             except Exception as e:
                 logger.error(f"Form filling error: {e}")
-                # Take screenshot for debugging
+                # Take screenshot for debugging (works in headless mode too)
                 try:
-                    await page.screenshot(path=f"error_screenshot_{agent_name}.png")
-                    logger.info(f"Screenshot saved: error_screenshot_{agent_name}.png")
-                except:
-                    pass
+                    screenshot_path = f"error_screenshot_{agent_name}_{int(asyncio.get_event_loop().time())}.png"
+                    await page.screenshot(path=screenshot_path)
+                    logger.info(f"Screenshot saved: {screenshot_path}")
+                except Exception as screenshot_error:
+                    logger.error(f"Failed to take screenshot: {screenshot_error}")
                 raise e
 
             finally:
