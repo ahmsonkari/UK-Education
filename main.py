@@ -239,7 +239,6 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.fill("#field167776236", data.get("address_city", ""))
 
                 await page.click("#field167776223_3")
-                await page.click("#field167776229_2")
                 await page.click("#field167776240_1")
 
                 logger.info("Filling fourth page...")
