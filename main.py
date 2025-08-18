@@ -59,12 +59,19 @@ async def call_claude_api(cleaned_text: str, api_key: str):
     client = anthropic.Anthropic(api_key=api_key)
     prompt = f"""
 You are a data extraction assistant. 
-Note1:Dates attended should be like EX:09/2023-06/2024
+Note1:Dates attended should be like EX:jun 23-sep 24
 Note2: Date of Birth should be like EX:29/06/2004
 Note3:IELTS date should be like EX: jun 2024
 Note4: School region choose the country Example Saudi Arabia
 Note5: gender is either 'M' or 'F'
 Note6: don't save them in parantases like () [] "" '' save them as they are
+Note7: in case of multiple phone numbers or mail adresses just pick the first one
+
+ Extract the following student details from the text and return a clean JSON object:
+Fields: First name,Middle name,Last name,Gender,Date of Birth, Nationality,Place of Birth, Address,Address Country,Address City ,
+Mobile Numbers, Emails
+,  IELTS Score,IELTS Date, Name of Qualification ,School Name, School region ,Dates attended
+
 
  Extract the following student details from the text and return a clean JSON object:
 Fields: First name,Middle name,Last name,Gender,Date of Birth, Nationality,Place of Birth, Address,Address Country,Address City ,
