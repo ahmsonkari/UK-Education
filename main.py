@@ -245,13 +245,13 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.click("#fsNextButton5813211")
                 await page.click("#field167776264_2")
                 await page.click("#field167776268_2")
-
                 # Copy Link
                 await page.wait_for_selector("#fsForm5813211 > button", timeout=10000)
                 await page.click("#fsForm5813211 > button")
 
-                await page.wait_for_selector('.StyledDialogActions-sc-1m3qehg-0.dWImUC', timeout=10000)
-                await page.click('button.StyledDialogButton-sc-1hp70zu-0.fPMYgh')
+                # Wait for dialog to appear and stabilize
+                await page.get_by_text("Save and get link").click()
+                await page.wait_for_timeout(500)  # Let animations finish
 
                 selector = 'body > div > form > div.fs-external-module__content.fs--grid-4-8 > div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > p:nth-child(3) > a'
                 await page.wait_for_selector(selector, timeout=10000)
