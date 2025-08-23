@@ -66,6 +66,8 @@ Note4: School region choose the country Example Saudi Arabia
 Note5: gender is either 'M' or 'F'
 Note6: don't save them in parantases like () [] "" '' save them as they are
 Note7: in case of multiple phone numbers or mail adresses just pick the first one
+Note8: nationality should be like Saudi Arabia
+
 
  Extract the following student details from the text and return a clean JSON object:
 Fields: First name,Middle name,Last name,Gender,Date of Birth, Nationality,Place of Birth, Address,Address Country,Address City ,
@@ -156,14 +158,14 @@ async def fill_form_async(data: dict, agent_name: str):
                     timeout=60000  # Increased timeout
                 )
 
-                logger.info("Filling first page...")
+                 logger.info("Filling first page...")
                 # First page
                 await page.wait_for_selector("#field167775915_3", timeout=10000)
                 await page.click("#field167775915_3")
 
                 await page.wait_for_selector("#field167775918", timeout=10000)
                 await page.fill("#field167775918", "UK Education Services")
-
+                await page.fill("#field167775919","Greater London")
                 await page.wait_for_selector("#field167775921-first", timeout=10000)
                 await page.fill("#field167775921-first", agent_name)
 
@@ -181,8 +183,8 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.wait_for_selector("#field167775937", timeout=10000)
                 await page.fill("#field167775937", data.get("last_name", ""))
 
-                await page.select_option("#field167775938", data.get("addsress_country"))
-                
+                await page.select_option("#field167775938", data.get("nationality"))
+
                 await page.wait_for_selector("#field167775945", timeout=10000)
                 await page.fill("#field167775945", data.get("emails", ""))
 
@@ -191,6 +193,7 @@ async def fill_form_async(data: dict, agent_name: str):
 
                 await page.wait_for_selector("#field167775943_2", timeout=10000)
                 await page.click("#field167775943_2")
+                # field167775943_2
 
                 # Click next button
                 await page.wait_for_selector("#fsNextButton5813211", timeout=10000)
@@ -198,6 +201,7 @@ async def fill_form_async(data: dict, agent_name: str):
 
                 logger.info("Filling second page...")
                 # Second page
+
                 await page.wait_for_selector("#field167776174", timeout=10000)
                 await page.fill("#field167776174", data.get("name_of_qualification", ""))
 
@@ -213,6 +217,7 @@ async def fill_form_async(data: dict, agent_name: str):
                     await page.click("#field167776190_2")
                 else:
                     await page.click("#field167776190_1")
+
                     await page.wait_for_selector("#field167776191_1", timeout=10000)
                     await page.click("#field167776191_1")
 
@@ -227,9 +232,18 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.wait_for_selector("#field167776218-\\*", timeout=10000)
                 await page.fill("#field167776218-\\*", data.get("date_of_birth"))
 
+                if data.get("gender") == "M":
+                    await page.click("#field167776219_1")
+                else:
+                    await page.click("#field167776219_2")
+
+
                 await page.click("#field167776213_2")
+
                 await page.click("#field167776215_2")
 
+
+                await page.select_option("#field167776233", data.get("address_country"))
 
                 await page.wait_for_selector("#field167776234", timeout=10000)
                 await page.fill("#field167776234", data.get("address", ""))
@@ -241,10 +255,11 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.click("#field167776240_1")
 
                 logger.info("Filling fourth page...")
-                # Fourth page
+                # fourth page
                 await page.click("#fsNextButton5813211")
                 await page.click("#field167776264_2")
                 await page.click("#field167776268_2")
+
                 # Copy Link
                 await page.wait_for_selector("#fsForm5813211 > button", timeout=10000)
                 await page.click("#fsForm5813211 > button")
@@ -253,12 +268,18 @@ async def fill_form_async(data: dict, agent_name: str):
                 await page.get_by_text("Save and get link").click()
                 await page.wait_for_timeout(500)  # Let animations finish
 
+
                 selector = 'body > div > form > div.fs-external-module__content.fs--grid-4-8 > div > main > div.fs-module-main__message.fs-module-main__message--initial.fs--mb0 > p:nth-child(3) > a'
                 await page.wait_for_selector(selector, timeout=10000)
                 element_text = await page.locator(selector).text_content()
 
+                # Print the element text
                 print(f"Element text: {element_text}")
                 logger.info(f"Element text: {element_text}")
+                await page.wait_for_timeout(2000)
+
+                logger.info("Form filling completed successfully")
+                return {"status": "success", "message": "Form filled successfully", "element_text": element_text}
 
                 await page.wait_for_timeout(2000)
 
